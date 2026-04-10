@@ -69,6 +69,8 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
     CMD curl -f http://localhost:7860/config || exit 1
 
+# Set working directory to environment code
+WORKDIR /app/env
+
 # Run the Gradio app
-# The module path is constructed to work with the /app/env structure
 CMD ["python", "app.py"]
