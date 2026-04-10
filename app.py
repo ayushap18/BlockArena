@@ -755,7 +755,11 @@ with gr.Blocks(
         )
 
     def on_benchmark():
-        return run_benchmark_suite(episodes_per_tier=4), "Benchmark completed"
+        try:
+            leaderboard = run_benchmark_suite(episodes_per_tier=3)
+            return leaderboard, "Benchmark completed"
+        except Exception as e:
+            return f"### Benchmark Leaderboard\n\nBenchmark failed: {e}", "Benchmark failed"
 
     def on_initial_load():
         initialize_environment(current_tier)
@@ -821,6 +825,7 @@ with gr.Blocks(
     benchmark_btn.click(
         on_benchmark,
         outputs=[benchmark_display, status_display],
+        queue=True,
     )
 
     demo.load(
@@ -835,7 +840,11 @@ with gr.Blocks(
             action_result_display,
             status_display,
         ],
+        queue=True,
     )
+
+    # Queue-based execution keeps the UI responsive during expensive callbacks.
+    demo.queue(default_concurrency_limit=2)
 
 
 app = create_app(
