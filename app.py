@@ -7,7 +7,6 @@ import json
 from typing import Optional, Dict, Any, Tuple
 
 import gradio as gr
-from fastapi.responses import RedirectResponse
 
 try:
     from openenv.core.env_server.http_server import create_app
@@ -423,12 +422,6 @@ app = create_app(
 )
 
 
-@app.get("/")
-async def root():
-    """Send users to the interactive dashboard by default."""
-    return RedirectResponse(url="/playground")
-
-
 @app.get("/info")
 async def info():
     """Environment metadata and endpoint reference."""
@@ -437,14 +430,14 @@ async def info():
         "description": "Strategic Contract Negotiation Environment for OpenEnv",
         "team": "Codecatalysts - OpenEnv Hackathon 2026",
         "version": "1.0.0",
-        "playground": "/playground",
+        "playground": "/",
         "endpoints": {
             "reset": "POST /reset - Start a new negotiation episode",
             "step": "POST /step - Take an action in the current episode",
             "health": "GET /health - Health check",
             "docs": "GET /docs - API documentation (Swagger UI)",
             "openapi": "GET /openapi.json - OpenAPI schema",
-            "playground": "GET /playground - Interactive dashboard",
+            "playground": "GET / - Interactive dashboard",
         },
     }
 
@@ -459,7 +452,7 @@ async def health_check():
     }
 
 
-app = gr.mount_gradio_app(app, demo, path="/playground")
+app = gr.mount_gradio_app(app, demo, path="/")
 
 
 if __name__ == "__main__":
