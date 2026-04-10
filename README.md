@@ -5,6 +5,9 @@ colorFrom: blue
 colorTo: purple
 sdk: docker
 app_file: app.py
+pinned: false
+---
+
 # BlockArena
 
 Strategic contract negotiation for OpenEnv, built for fast demos and RL experimentation.
