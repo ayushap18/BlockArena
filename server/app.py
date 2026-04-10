@@ -31,6 +31,35 @@ app = create_app(
 )
 
 
+# Add root route and health check
+@app.get("/")
+async def root():
+    """Root endpoint with API documentation."""
+    return {
+        "name": "BlockArena",
+        "description": "Strategic Contract Negotiation Environment for OpenEnv",
+        "team": "Codecatalysts - OpenEnv Hackathon 2026",
+        "version": "1.0.0",
+        "endpoints": {
+            "reset": "POST /reset - Start a new negotiation episode",
+            "step": "POST /step - Take an action in the current episode",
+            "health": "GET /health - Health check",
+            "docs": "GET /docs - API documentation (Swagger UI)",
+            "openapi": "GET /openapi.json - OpenAPI schema"
+        }
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "service": "blockarena",
+        "ready": True
+    }
+
+
 def main(host: str = "0.0.0.0", port: int = 8000) -> None:
     import uvicorn
 
