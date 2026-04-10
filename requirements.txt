@@ -2,3 +2,4 @@ openenv-core
 openai
 requests
 python-dotenv
+gradio>=4.0

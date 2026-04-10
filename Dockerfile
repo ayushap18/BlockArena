@@ -65,10 +65,10 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
-# Health check
+# Health check - Gradio serves on /config
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
-    CMD curl -f http://localhost:7860/health || exit 1
+    CMD curl -f http://localhost:7860/config || exit 1
 
-# Run the FastAPI server
+# Run the Gradio app
 # The module path is constructed to work with the /app/env structure
-CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port 7860"]
+CMD ["python", "-m", "gradio", "app.py", "--server-name", "0.0.0.0", "--server-port", "7860"]

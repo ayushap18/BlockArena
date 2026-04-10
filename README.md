@@ -4,7 +4,7 @@ emoji: 🎯
 colorFrom: blue
 colorTo: purple
 sdk: docker
-app_file: server/app.py
+app_file: app.py
 pinned: false
 ---
 
@@ -254,17 +254,72 @@ Expected output:
 
 ---
 
-### 🌐 Use via HuggingFace Spaces
+## 🎮 Interactive Playground (HuggingFace Spaces)
 
-Simple and instant—no local setup needed!
+**No installation required!** Play with BlockArena directly in your browser.
 
-Visit: **[BlockArena on HuggingFace Spaces](https://huggingface.co/spaces/axy18/BlockArena)**
+### Live Demo: [Open BlockArena Playground](https://huggingface.co/spaces/axy18/BlockArena)
 
-The interactive playground includes:
-- 📋 **Action Form**: Select action type, provide parameters
-- 🎮 **Live Negotiation**: See real-time environment responses
-- 📊 **State Inspector**: View full observation, rewards, metadata
-- 🔄 **Reset**: Start new episodes on demand
+### Dashboard Features
+
+The interactive Gradio-based playground includes:
+
+| Feature | Description |
+|---------|-------------|
+| 🔄 **Reset** | Start a new negotiation episode from scratch |
+| 🎯 **Action Panel** | Dropdown to select action type + context-specific input fields |
+| 📊 **Live State** | Real-time observation, metadata, and agent stances |
+| 💾 **JSON Inspector** | Full observation metadata in structured JSON format |
+| 📈 **Episode Summary** | Running stats on rewards, action counts, and performance |
+| 📋 **Action Log** | Sequential history of all actions taken |
+| ✨ **Smart Suggestions** | AI-recommended next best action at each step |
+
+### How to Use the Playground
+
+**1. Reset an Episode**
+   - Click the 🔄 **Reset Episode** button
+   - You'll see the initial state with vendor/legal stances
+   - Choose your difficulty tier from the environment
+
+**2. Select an Action**
+   - Click the **Action Type** dropdown
+   - Select one of: ACCEPT, REJECT, PROPOSE, PROBE, ESCALATE, SUMMARIZE
+   - Fill in additional fields based on action type:
+     - `ACCEPT/REJECT/PROPOSE/PROBE` → Clause ID required
+     - `PROPOSE` → Also provide new clause text
+     - `REJECT` → Optionally add rejection reason
+     - `PROBE` → Ask a strategic question
+
+**3. Execute & Learn**
+   - Click ▶️ **Execute Action**
+   - Watch the reward (+0.40 for agreements, +0.10 for probes, etc.)
+   - Read the risk level and suggested next action
+   - Use SUMMARIZE to get in-episode progress at no round cost
+
+**4. Iterate**
+   - Continue taking actions until episode is "Done"
+   - Check your Episode Summary for total reward
+   - Experiment with different negotiation strategies!
+
+### Example Playground Walkthrough
+
+```
+🔄 Reset Episode
+→ Tier: Medium | Clauses: 8 | Vendor Stance: Defensive
+
+💬 Action: PROBE on "liability"
+   Question: "What liability cap would be acceptable?"
+→ Reward: +0.10 | Probe Result: "Max $2M based on policy"
+
+💭 Action: PROPOSE on "liability"
+   Text: "Set maximum liability at $1.5M"
+→ Reward: +0.40 (both agree!) | Clause closed ✓
+
+📋 Action: SUMMARIZE
+→ Progress: "2/8 clauses agreed. Vendor warming up. Legal OK."
+
+→ Continue negotiating remaining 6 clauses...
+```
 
 ---
 
