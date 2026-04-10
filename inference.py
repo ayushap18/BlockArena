@@ -4,7 +4,7 @@ import json
 import requests
 from openai import OpenAI
 
-SERVER_URL = os.environ.get("SERVER_URL", "http://localhost:7860")
+SERVER_URL = os.environ["SERVER_URL"]
 MAX_STEPS = 30
 SUCCESS_THRESHOLD = 0.5
 TIERS = ["easy", "medium", "hard"]
@@ -241,16 +241,16 @@ def run_tier(client, model, tier: str):
 
 
 def main():
-    api_key = os.environ["API_KEY"]
+    hf_token = os.environ["HF_TOKEN"]
     api_base = os.environ["API_BASE_URL"]
     model = os.environ.get("MODEL_NAME", "gpt-4.1-mini")
 
     debug(f"API_BASE_URL={api_base}")
     debug(f"MODEL_NAME={model}")
     debug(f"SERVER_URL={SERVER_URL}")
-    debug(f"API_KEY set: {bool(api_key)}")
+    debug(f"HF_TOKEN set: {bool(hf_token)}")
 
-    client = OpenAI(base_url=api_base, api_key=api_key)
+    client = OpenAI(base_url=api_base, api_key=hf_token)
 
     for tier in TIERS:
         debug(f"Starting tier: {tier}")

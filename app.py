@@ -1,15 +1,27 @@
 """
 BlockArena - Interactive RL Playground
-Gradio-based dashboard for HuggingFace Spaces
+FastAPI/OpenEnv app with a mounted Gradio dashboard.
 """
 
-import gradio as gr
 import json
 from typing import Optional, Dict, Any, Tuple
-from server.blockarena_environment import (
-    BlockArenaEnvironment,
-    BlockArenaAction
-)
+
+import gradio as gr
+
+try:
+    from openenv.core.env_server.http_server import create_app
+except Exception as e:  # pragma: no cover
+    raise ImportError(
+        "openenv is required for the web interface. "
+        "Install dependencies and ensure the OpenEnv package is available."
+    ) from e
+
+try:
+    from models import BlockArenaAction, BlockArenaObservation
+    from server.blockarena_environment import BlockArenaEnvironment
+except ImportError:
+    from models import BlockArenaAction, BlockArenaObservation
+    from server.blockarena_environment import BlockArenaEnvironment
 
 # Global environment instance
 env: Optional[BlockArenaEnvironment] = None
@@ -401,6 +413,49 @@ with gr.Blocks(
     )
 
 
+app = create_app(
+    BlockArenaEnvironment,
+    BlockArenaAction,
+    BlockArenaObservation,
+    env_name="blockarena",
+    max_concurrent_envs=1,
+)
+
+
+@app.get("/")
+async def root():
+    """Root endpoint for Hugging Face Spaces and local health checks."""
+    return {
+        "name": "BlockArena",
+        "description": "Strategic Contract Negotiation Environment for OpenEnv",
+        "team": "Codecatalysts - OpenEnv Hackathon 2026",
+        "version": "1.0.0",
+        "playground": "/playground",
+        "endpoints": {
+            "reset": "POST /reset - Start a new negotiation episode",
+            "step": "POST /step - Take an action in the current episode",
+            "health": "GET /health - Health check",
+            "docs": "GET /docs - API documentation (Swagger UI)",
+            "openapi": "GET /openapi.json - OpenAPI schema",
+            "playground": "GET /playground - Interactive dashboard",
+        },
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "service": "blockarena",
+        "ready": True,
+    }
+
+
+app = gr.mount_gradio_app(app, demo, path="/playground")
+
+
 if __name__ == "__main__":
-    initialize_environment()
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=7860)
