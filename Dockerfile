@@ -71,4 +71,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
 
 # Run the Gradio app
 # The module path is constructed to work with the /app/env structure
-CMD ["python", "-m", "gradio", "app.py", "--server-name", "0.0.0.0", "--server-port", "7860"]
+CMD ["python", "app.py"]
