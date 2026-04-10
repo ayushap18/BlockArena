@@ -4,7 +4,6 @@ FastAPI/OpenEnv app with a mounted Gradio dashboard.
 """
 
 import json
-import re
 from typing import Optional, Dict, Any, Tuple
 
 import gradio as gr
@@ -144,13 +143,13 @@ HERO_HTML = """
     <div class='kicker'>OpenEnv Hackathon 2026</div>
     <h1>BlockArena ML Negotiation Studio</h1>
     <p>
-        A professional negotiation benchmark cockpit with strategic guidance, live risk analytics,
-        and policy benchmarking designed for high-stakes evaluation.
+        A professional negotiation cockpit with strategic guidance, live risk analytics,
+        and fast interactive simulation designed for high-stakes evaluation.
     </p>
     <div class='chip-row'>
         <span class='chip'>Partially Observable RL</span>
         <span class='chip'>Live Risk Intelligence</span>
-        <span class='chip'>Guided Demo + Benchmark</span>
+        <span class='chip'>Guided Demo</span>
         <span class='chip'>OpenEnv Compatible</span>
     </div>
 </section>
@@ -197,117 +196,6 @@ agreement {breakdown.get('agreement_bonus', 0.0):+.2f}, probe {breakdown.get('pr
 legal {breakdown.get('legal_penalty', 0.0):+.2f}, walkout {breakdown.get('walkout_penalty', 0.0):+.2f},
 final {breakdown.get('final_bonus', 0.0):+.2f}
 """
-
-
-def _extract_vendor_value(text: str) -> str:
-    if not text:
-        return ""
-    need_match = re.search(r"need\s+([^\.]+)", text, flags=re.IGNORECASE)
-    if need_match:
-        return need_match.group(1).strip()
-    return ""
-
-
-def _choose_showcase_action(obs, learned_values: Dict[str, str]) -> BlockArenaAction:
-    meta = obs.metadata
-    clause_id = obs.clause_id
-    vendor_stance = meta.get("vendor_stance", "open")
-    legal_stance = meta.get("legal_stance", "approved")
-    probes_remaining = int(meta.get("probes_remaining", 0) or 0)
-
-    if legal_stance == "flagged":
-        value = learned_values.get(clause_id, "commercially reasonable")
-        return BlockArenaAction(
-            action_type="PROPOSE",
-            clause_id=clause_id,
-            new_text=f"Compliant negotiated terms with {value} and legal-safe language.",
-        )
-
-    if clause_id not in learned_values and probes_remaining > 0:
-        return BlockArenaAction(
-            action_type="PROBE",
-            clause_id=clause_id,
-            party="vendor",
-            question="What is your must-have requirement for this clause?",
-        )
-
-    if vendor_stance == "open" and legal_stance == "approved":
-        if clause_id in learned_values:
-            value = learned_values[clause_id]
-            return BlockArenaAction(
-                action_type="PROPOSE",
-                clause_id=clause_id,
-                new_text=f"Final clause language includes {value} and compliant controls.",
-            )
-        return BlockArenaAction(action_type="ACCEPT", clause_id=clause_id)
-
-    value = learned_values.get(clause_id, "balanced terms")
-    return BlockArenaAction(
-        action_type="PROPOSE",
-        clause_id=clause_id,
-        new_text=f"Balanced commercial terms with {value} and risk controls.",
-    )
-
-
-def _simulate_showcase_episode(tier: str, max_steps: int = 40) -> Dict[str, Any]:
-    bench_env = BlockArenaEnvironment(tier)
-    obs = bench_env.reset()
-    learned_values: Dict[str, str] = {}
-    done = False
-    steps = 0
-
-    while not done and steps < max_steps:
-        steps += 1
-        action = _choose_showcase_action(obs, learned_values)
-        obs = bench_env.step(action)
-        done = obs.done
-
-        if action.action_type == "PROBE" and obs.probe_result:
-            extracted = _extract_vendor_value(obs.probe_result)
-            if extracted:
-                learned_values[action.clause_id] = extracted
-
-    success = bool(obs.done and obs.clauses_agreed == obs.clauses_total)
-    return {
-        "tier": tier,
-        "success": success,
-        "score": float(obs.metadata.get("episode_score", 0.01)),
-        "steps": steps,
-        "agreed": int(obs.clauses_agreed),
-        "total": int(obs.clauses_total),
-    }
-
-
-def run_benchmark_suite(episodes_per_tier: int = 4) -> str:
-    tiers = ["easy", "medium", "hard"]
-    rows = []
-    for tier in tiers:
-        runs = [_simulate_showcase_episode(tier) for _ in range(episodes_per_tier)]
-        wins = sum(1 for r in runs if r["success"])
-        avg_score = sum(r["score"] for r in runs) / max(len(runs), 1)
-        avg_steps = sum(r["steps"] for r in runs) / max(len(runs), 1)
-        avg_agreed = sum(r["agreed"] for r in runs) / max(len(runs), 1)
-        total = runs[0]["total"] if runs else 0
-        rows.append((tier, wins / episodes_per_tier, avg_score, avg_steps, avg_agreed, total))
-
-    lines = [
-        "### Benchmark Leaderboard (Showcase Policy)",
-        "",
-        "| Tier | Win Rate | Avg Score | Avg Steps | Avg Clauses Closed |",
-        "|---|---:|---:|---:|---:|",
-    ]
-    for tier, win_rate, avg_score, avg_steps, avg_agreed, total in rows:
-        lines.append(
-            f"| {tier.title()} | {win_rate:.0%} | {avg_score:.4f} | {avg_steps:.1f} | {avg_agreed:.1f}/{total} |"
-        )
-
-    champion = max(rows, key=lambda x: x[2])
-    lines.append("")
-    lines.append(
-        f"**Top Tier by Score:** {champion[0].title()} (avg {champion[2]:.4f})"
-    )
-    lines.append("This benchmark gives judges a quick proof of strategic consistency.")
-    return "\n".join(lines)
 
 
 def render_action_history() -> str:
@@ -636,7 +524,6 @@ with gr.Blocks(
             with gr.Row():
                 reset_btn = gr.Button("Reset", variant="primary")
                 guided_demo_btn = gr.Button("Guided Demo")
-            benchmark_btn = gr.Button("Run Benchmark", variant="secondary")
             status_display = gr.Textbox(label="Run Status", interactive=False, value="Ready")
             scenario_preview = gr.Markdown(render_scenario_preview(current_tier))
 
@@ -688,9 +575,6 @@ with gr.Blocks(
                 with gr.Column(scale=1):
                     action_result_display = gr.Markdown("Action output appears here.")
                     summary_display = gr.Markdown("### Episode Summary\n\nNo actions taken yet.")
-
-        with gr.TabItem("Leaderboard"):
-            benchmark_display = gr.Markdown("### Benchmark Leaderboard\n\nRun benchmark to generate results.")
 
         with gr.TabItem("Observability"):
             logs_display = gr.Markdown("### Action Timeline\n\nNo actions taken yet.")
@@ -754,13 +638,6 @@ with gr.Blocks(
             "Guided demo complete",
         )
 
-    def on_benchmark():
-        try:
-            leaderboard = run_benchmark_suite(episodes_per_tier=3)
-            return leaderboard, "Benchmark completed"
-        except Exception as e:
-            return f"### Benchmark Leaderboard\n\nBenchmark failed: {e}", "Benchmark failed"
-
     def on_initial_load():
         initialize_environment(current_tier)
         obs = env.reset()
@@ -822,12 +699,6 @@ with gr.Blocks(
         ],
     )
 
-    benchmark_btn.click(
-        on_benchmark,
-        outputs=[benchmark_display, status_display],
-        queue=True,
-    )
-
     demo.load(
         on_initial_load,
         outputs=[
@@ -840,11 +711,7 @@ with gr.Blocks(
             action_result_display,
             status_display,
         ],
-        queue=True,
     )
-
-    # Queue-based execution keeps the UI responsive during expensive callbacks.
-    demo.queue(default_concurrency_limit=2)
 
 
 app = create_app(
