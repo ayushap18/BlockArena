@@ -297,7 +297,6 @@ with gr.Blocks(
         with gr.Column(scale=1):
             action_result_display = gr.Markdown(
                 value="Take an action to see results",
-                label="Result"
             )
             
         with gr.Column(scale=1):
@@ -322,8 +321,7 @@ with gr.Blocks(
         
         with gr.Column():
             summary_display = gr.Markdown(
-                value="No actions taken yet",
-                label="Episode Summary"
+                value="No actions taken yet"
             )
     
     # Status indicator
