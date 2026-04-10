@@ -54,6 +54,109 @@ TIER_PROFILES = {
 }
 
 
+APP_CSS = """
+<style>
+:root {
+    --bg: #0b1220;
+    --bg-soft: #111c34;
+    --card: #101a2d;
+    --card-border: #22314f;
+    --text: #e6edf8;
+    --muted: #96a8c8;
+    --accent: #5eead4;
+    --accent-2: #60a5fa;
+    --good: #22c55e;
+    --warn: #f59e0b;
+}
+
+body, .gradio-container {
+    background: radial-gradient(1200px 600px at 8% -10%, #1d2f54, transparent),
+                            radial-gradient(800px 450px at 95% -10%, #1c3b56, transparent),
+                            var(--bg) !important;
+    color: var(--text) !important;
+}
+
+.hero {
+    background: linear-gradient(145deg, #102241 0%, #0e1a33 100%);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    padding: 20px 22px;
+    margin-bottom: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+.hero h1 {
+    margin: 0 0 8px 0;
+    font-size: 1.75rem;
+    letter-spacing: 0.2px;
+}
+
+.hero p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.chip-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.chip {
+    border: 1px solid var(--card-border);
+    background: rgba(20, 35, 63, 0.72);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.panel {
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(15, 27, 48, 0.95), rgba(12, 22, 39, 0.95));
+    padding: 10px;
+}
+
+.kicker {
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.footer-note {
+    color: var(--muted);
+    text-align: center;
+    font-size: 12px;
+    margin-top: 8px;
+}
+</style>
+"""
+
+
+HERO_HTML = """
+<section class='hero'>
+    <div class='kicker'>OpenEnv Hackathon 2026</div>
+    <h1>BlockArena ML Negotiation Studio</h1>
+    <p>
+        A professional negotiation benchmark cockpit with strategic guidance, live risk analytics,
+        and policy benchmarking designed for high-stakes evaluation.
+    </p>
+    <div class='chip-row'>
+        <span class='chip'>Partially Observable RL</span>
+        <span class='chip'>Live Risk Intelligence</span>
+        <span class='chip'>Guided Demo + Benchmark</span>
+        <span class='chip'>OpenEnv Compatible</span>
+    </div>
+</section>
+"""
+
+
 def get_tier_profile(tier: str) -> Dict[str, Any]:
     return TIER_PROFILES.get(tier, TIER_PROFILES["easy"])
 
@@ -516,113 +619,91 @@ def get_episode_summary() -> str:
 # ==================== GRADIO INTERFACE ====================
 
 with gr.Blocks(
-    title="BlockArena - RL Playground",
-    theme=gr.themes.Soft(primary_hue="blue", secondary_hue="purple"),
-    css="""
-    .header-title { font-size: 2.5em; font-weight: bold; color: #4f46e5; }
-    .action-panel { border: 2px solid #e5e7eb; border-radius: 8px; padding: 16px; background: #f9fafb; }
-    .status-box { border-radius: 8px; padding: 12px; margin: 8px 0; }
-    .status-success { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
-    .status-warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
-    .status-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
-    """
+    title="BlockArena - ML Negotiation Studio"
 ) as demo:
-    
-    # Header
-    gr.Markdown(
-        """
-        # 🎯 BlockArena - Strategic Contract Negotiation RL Playground
-        
-        **An OpenEnv environment for negotiation strategy research.**
-        
-        Negotiate complex multi-party contracts against AI opponents (VendorAgent & LegalReviewer).
-        Learn to maximize rewards through strategic probing, proposing, and escalation.
-        
-        ---
-        """
-    )
-    with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("### ⚙️ Mission Control")
+    gr.HTML(APP_CSS)
+    gr.HTML(HERO_HTML)
+
+    with gr.Row(equal_height=True):
+        with gr.Column(scale=1, elem_classes=["panel"]):
+            gr.Markdown("### Mission Control")
             tier_selector = gr.Dropdown(
                 label="Scenario Tier",
                 choices=[("Easy", "easy"), ("Medium", "medium"), ("Hard", "hard")],
                 value=current_tier,
                 interactive=True,
             )
-            reset_btn = gr.Button("🔄 Reset Episode", size="lg", variant="primary")
-            guided_demo_btn = gr.Button("🎬 Run Guided Demo", size="lg", variant="secondary")
-            benchmark_btn = gr.Button("🏆 Run Benchmark", size="lg", variant="secondary")
+            with gr.Row():
+                reset_btn = gr.Button("Reset", variant="primary")
+                guided_demo_btn = gr.Button("Guided Demo")
+            benchmark_btn = gr.Button("Run Benchmark", variant="secondary")
+            status_display = gr.Textbox(label="Run Status", interactive=False, value="Ready")
             scenario_preview = gr.Markdown(render_scenario_preview(current_tier))
-            benchmark_display = gr.Markdown("### Benchmark Leaderboard\n\nRun benchmark to generate results.")
 
-        with gr.Column(scale=2):
-            gr.Markdown("### 📊 Live Negotiation Board")
-            state_display = gr.Markdown(value="Click **Reset Episode** to load the selected scenario.")
+        with gr.Column(scale=2, elem_classes=["panel"]):
+            gr.Markdown("### Live Intelligence")
+            state_display = gr.Markdown(value="Reset an episode to start live negotiation.")
             metrics_display = gr.Markdown("### Live Strategy Snapshot\n\nReady.")
 
-    gr.Markdown("---")
+    with gr.Tabs():
+        with gr.TabItem("Negotiation Lab"):
+            with gr.Row(equal_height=True):
+                with gr.Column(scale=1):
+                    action_type = gr.Dropdown(
+                        label="Action Type",
+                        choices=[
+                            ("Accept Clause", "ACCEPT"),
+                            ("Reject Clause", "REJECT"),
+                            ("Propose Alternative", "PROPOSE"),
+                            ("Probe for Info", "PROBE"),
+                            ("Escalate", "ESCALATE"),
+                            ("Summarize Progress", "SUMMARIZE"),
+                        ],
+                        interactive=True,
+                        value=None,
+                    )
+                    clause_id = gr.Textbox(
+                        label="Clause ID",
+                        placeholder="liability, payment_terms, ip_ownership",
+                        interactive=True,
+                    )
+                    new_text = gr.Textbox(
+                        label="New Text (PROPOSE)",
+                        placeholder="Negotiated clause text",
+                        interactive=True,
+                    )
+                    reason = gr.Textbox(
+                        label="Reason (REJECT)",
+                        placeholder="Reason for rejection",
+                        interactive=True,
+                    )
+                    question = gr.Textbox(
+                        label="Question (PROBE)",
+                        placeholder="What is your must-have requirement?",
+                        interactive=True,
+                        lines=2,
+                    )
+                    step_btn = gr.Button("Execute Action", variant="primary")
 
-    with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("### 🎮 Action Panel")
-            action_type = gr.Dropdown(
-                label="Action Type",
-                choices=[
-                    ("Accept Clause", "ACCEPT"),
-                    ("Reject Clause", "REJECT"),
-                    ("Propose Alternative", "PROPOSE"),
-                    ("Probe for Info", "PROBE"),
-                    ("Escalate", "ESCALATE"),
-                    ("Summarize Progress", "SUMMARIZE"),
-                ],
-                interactive=True,
-                value=None,
-            )
-            clause_id = gr.Textbox(
-                label="Clause ID",
-                placeholder="e.g., liability, payment_terms, ip_ownership",
-                interactive=True,
-            )
-            new_text = gr.Textbox(
-                label="New Text (for PROPOSE)",
-                placeholder="e.g., Maximum liability: $1M",
-                interactive=True,
-            )
-            reason = gr.Textbox(
-                label="Reason (for REJECT)",
-                placeholder="e.g., Exceeds our risk tolerance",
-                interactive=True,
-            )
-            question = gr.Textbox(
-                label="Question (for PROBE)",
-                placeholder="e.g., What matters most in this clause?",
-                interactive=True,
-                lines=2,
-            )
-            step_btn = gr.Button("▶️ Execute Action", size="lg", variant="primary")
+                with gr.Column(scale=1):
+                    action_result_display = gr.Markdown("Action output appears here.")
+                    summary_display = gr.Markdown("### Episode Summary\n\nNo actions taken yet.")
 
-        with gr.Column(scale=1):
-            gr.Markdown("### 🧭 Results & Insights")
-            action_result_display = gr.Markdown(value="Take an action to see results.")
-            status_display = gr.Textbox(label="Status", interactive=False, value="Ready")
+        with gr.TabItem("Leaderboard"):
+            benchmark_display = gr.Markdown("### Benchmark Leaderboard\n\nRun benchmark to generate results.")
+
+        with gr.TabItem("Observability"):
             logs_display = gr.Markdown("### Action Timeline\n\nNo actions taken yet.")
-            summary_display = gr.Markdown("### Episode Summary\n\nNo actions taken yet.")
+            with gr.Accordion("Raw Observation JSON", open=False):
+                metadata_display = gr.Code(
+                    language="json",
+                    label="Observation Payload",
+                    value="{}",
+                    interactive=False,
+                )
 
-    gr.Markdown("### 🔍 Debug View")
-    metadata_display = gr.Code(
-        language="json",
-        label="Full Observation (JSON)",
-        value="{}",
-        interactive=False,
-    )
-
-    gr.Markdown(
-        """
-        **BlockArena v1.0** | Built by [Codecatalysts](https://github.com/ayushap18/BlockArena)
-
-        [GitHub](https://github.com/ayushap18/BlockArena) • [OpenEnv](https://openenv.org)
-        """
+    gr.HTML(
+        "<div class='footer-note'>BlockArena v1.0 • Built by Codecatalysts • OpenEnv-compatible endpoints preserved.</div>"
     )
 
     # ==================== EVENT HANDLERS ====================
@@ -634,63 +715,107 @@ with gr.Blocks(
         state_info, state_json, log_msg, status, scenario_text, metrics_text, history_text = reset_episode(tier)
         summary_text = render_episode_summary()
         return (
+            scenario_text,
             state_info,
-            state_json,
             metrics_text,
             history_text,
             summary_text,
+            state_json,
             log_msg,
             status,
         )
 
     def on_action(atype, cid, ntext, reason_val, question_val):
-        state_info, state_json, log_msg, status, action_resp, metrics_text, history_text = take_action(
+        state_info, state_json, _log_msg, status, action_resp, metrics_text, history_text = take_action(
             atype, cid, ntext, reason_val, question_val
         )
         summary_text = render_episode_summary()
         return (
+            render_scenario_preview(current_tier),
             state_info,
-            state_json,
-            action_resp,
             metrics_text,
             history_text,
             summary_text,
+            state_json,
+            action_resp,
             status,
         )
 
     def on_guided_demo(tier):
-        state_info, state_json, log_msg, action_resp, metrics_text, history_text, summary_text = run_guided_demo(tier)
+        state_info, state_json, _log_msg, action_resp, metrics_text, history_text, summary_text = run_guided_demo(tier)
         return (
+            render_scenario_preview(tier),
             state_info,
-            state_json,
-            action_resp,
             metrics_text,
             history_text,
             summary_text,
-            "✅ Guided demo complete",
+            state_json,
+            action_resp,
+            "Guided demo complete",
         )
 
     def on_benchmark():
-        return run_benchmark_suite(episodes_per_tier=4), "✅ Benchmark completed"
+        return run_benchmark_suite(episodes_per_tier=4), "Benchmark completed"
+
+    def on_initial_load():
+        initialize_environment(current_tier)
+        obs = env.reset()
+        return (
+            render_scenario_preview(current_tier),
+            format_observation(obs),
+            render_live_metrics(obs),
+            render_action_history(),
+            render_episode_summary(),
+            json.dumps(obs.metadata, indent=2),
+            "Ready to start negotiation.",
+            "Ready",
+        )
 
     tier_selector.change(on_tier_change, inputs=[tier_selector], outputs=[scenario_preview])
 
     reset_btn.click(
         on_reset,
         inputs=[tier_selector],
-        outputs=[state_display, metadata_display, metrics_display, logs_display, summary_display, action_result_display, status_display],
+        outputs=[
+            scenario_preview,
+            state_display,
+            metrics_display,
+            logs_display,
+            summary_display,
+            metadata_display,
+            action_result_display,
+            status_display,
+        ],
     )
 
     step_btn.click(
         on_action,
         inputs=[action_type, clause_id, new_text, reason, question],
-        outputs=[state_display, metadata_display, action_result_display, metrics_display, logs_display, summary_display, status_display],
+        outputs=[
+            scenario_preview,
+            state_display,
+            metrics_display,
+            logs_display,
+            summary_display,
+            metadata_display,
+            action_result_display,
+            status_display,
+        ],
     )
 
     guided_demo_btn.click(
         on_guided_demo,
         inputs=[tier_selector],
-        outputs=[state_display, metadata_display, action_result_display, metrics_display, logs_display, summary_display, status_display],
+        outputs=[
+            scenario_preview,
+            state_display,
+            metrics_display,
+            logs_display,
+            summary_display,
+            metadata_display,
+            action_result_display,
+            status_display,
+        ],
     )
 
     benchmark_btn.click(
@@ -699,8 +824,17 @@ with gr.Blocks(
     )
 
     demo.load(
-        get_initial_state,
-        outputs=[state_display, metadata_display, status_display],
+        on_initial_load,
+        outputs=[
+            scenario_preview,
+            state_display,
+            metrics_display,
+            logs_display,
+            summary_display,
+            metadata_display,
+            action_result_display,
+            status_display,
+        ],
     )
 
 
