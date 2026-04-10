@@ -19,8 +19,9 @@ Strategic contract negotiation for OpenEnv, built for fast demos and RL experime
 - Partially observable negotiation with two opponents: VendorAgent and LegalReviewer
 - Three difficulty tiers: easy, medium, hard
 - New `SUMMARIZE` action for free progress checkpoints
-- Strategy metadata: `risk_level`, `next_best_action`, and `action_mix`
-- Polished Gradio cockpit with tier selector, live metrics, and guided demo
+- Strategy intelligence: `risk_level`, `next_best_action`, `negotiation_phase`, and `win_probability`
+- Reward transparency via `reward_breakdown` metadata
+- Polished Gradio cockpit with tier selector, guided demo, and benchmark leaderboard
 
 ## Quick Start
 
@@ -31,7 +32,7 @@ pip install -r requirements.txt
 uvicorn server.app:app --host 0.0.0.0 --port 7860
 ```
 
-Open `http://localhost:7860` for the API or `http://localhost:7860/playground` for the UI.
+Open `http://localhost:7860` for the UI. API routes remain available at `/reset`, `/step`, `/info`, and `/health`.
 
 ## Run Checks
 

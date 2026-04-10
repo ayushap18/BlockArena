@@ -100,6 +100,15 @@ class BlockArenaEnvironment(Environment):
         }
         self._last_vendor_stance = "open"
         self._last_legal_stance = "approved"
+        self._last_reward_breakdown = {
+            "base": 0.01,
+            "agreement_bonus": 0.0,
+            "probe_bonus": 0.0,
+            "legal_penalty": 0.0,
+            "walkout_penalty": 0.0,
+            "final_bonus": 0.0,
+            "total": 0.01,
+        }
         self._vendor.reset()
         self._legal.reset()
 
@@ -127,9 +136,14 @@ class BlockArenaEnvironment(Environment):
                 "legal_stance": "approved",
                 "agreed_clauses": [],
                 "episode_score": 0.01,
+                "clauses_agreed": 0,
+                "total_clauses": len(self._clauses),
                 "probes_remaining": self._probe_budget,
                 "risk_level": "low",
                 "next_best_action": "PROBE",
+                "negotiation_phase": "discovery",
+                "win_probability": 0.55,
+                "reward_breakdown": self._last_reward_breakdown,
                 "action_mix": self._action_counts,
             },
         )
@@ -148,6 +162,16 @@ class BlockArenaEnvironment(Environment):
         if action_type == "SUMMARIZE":
             score = self._compute_episode_score()
             summary = self._build_progress_summary(score)
+            summary_breakdown = {
+                "base": 0.03,
+                "agreement_bonus": 0.0,
+                "probe_bonus": 0.0,
+                "legal_penalty": 0.0,
+                "walkout_penalty": 0.0,
+                "final_bonus": 0.0,
+                "total": 0.03,
+            }
+            self._last_reward_breakdown = summary_breakdown
             return self._build_observation(
                 clause=clause,
                 vendor_resp="Negotiation summary generated.",
@@ -158,6 +182,7 @@ class BlockArenaEnvironment(Environment):
                 reward=0.03,
                 done=False,
                 score=score,
+                reward_breakdown=summary_breakdown,
             )
 
         self._rounds_used += 1
@@ -178,12 +203,13 @@ class BlockArenaEnvironment(Environment):
                 party = (action.party or "vendor").lower()
                 probe_result = vendor_resp if party == "vendor" else legal_resp
 
-        reward = self._calculate_reward(
+        reward_breakdown = self._build_reward_breakdown(
             action_type=action_type,
             vendor_stance=vendor_stance,
             legal_stance=legal_stance,
             probe_result=probe_result,
         )
+        reward = reward_breakdown["total"]
 
         if vendor_stance == "open" and legal_stance == "approved":
             if action_type in ("ACCEPT", "PROPOSE"):
@@ -201,8 +227,12 @@ class BlockArenaEnvironment(Environment):
             bonus = self._calculate_final_bonus()
             reward = clamp(reward + bonus)
             self._episode_rewards[-1] = reward
+            reward_breakdown["final_bonus"] = bonus
+            reward_breakdown["total"] = reward
 
         reward = clamp(reward)
+        reward_breakdown["total"] = reward
+        self._last_reward_breakdown = reward_breakdown
 
         score = self._compute_episode_score()
 
@@ -221,6 +251,7 @@ class BlockArenaEnvironment(Environment):
             reward=reward,
             done=done,
             score=score,
+            reward_breakdown=reward_breakdown,
         )
 
     def _build_observation(
@@ -234,6 +265,7 @@ class BlockArenaEnvironment(Environment):
         reward: float,
         done: bool,
         score: float,
+        reward_breakdown: Dict[str, float],
     ) -> BlockArenaObservation:
         return BlockArenaObservation(
             clause_id=clause["id"],
@@ -253,9 +285,14 @@ class BlockArenaEnvironment(Environment):
                 "legal_stance": legal_stance,
                 "agreed_clauses": list(self._agreed.keys()),
                 "episode_score": score,
+                "clauses_agreed": len(self._agreed),
+                "total_clauses": len(self._clauses),
                 "probes_remaining": max(self._probe_budget - self._probes_used, 0),
                 "risk_level": self._risk_level(vendor_stance, legal_stance),
                 "next_best_action": self._next_best_action(vendor_stance, legal_stance),
+                "negotiation_phase": self._negotiation_phase(vendor_stance, legal_stance),
+                "win_probability": self._win_probability(vendor_stance, legal_stance),
+                "reward_breakdown": reward_breakdown,
                 "action_mix": self._action_counts,
             },
         )
@@ -282,6 +319,28 @@ class BlockArenaEnvironment(Environment):
             return "ACCEPT"
         return "PROPOSE"
 
+    def _negotiation_phase(self, vendor_stance: str, legal_stance: str) -> str:
+        if vendor_stance == "walkout" or legal_stance == "flagged":
+            return "crisis"
+        progress = len(self._agreed) / max(len(self._clauses), 1)
+        if progress >= 0.75:
+            return "closing"
+        if self._probes_used > 0:
+            return "bargaining"
+        return "discovery"
+
+    def _win_probability(self, vendor_stance: str, legal_stance: str) -> float:
+        progress = len(self._agreed) / max(len(self._clauses), 1)
+        round_pressure = self._rounds_used / max(self._round_budget, 1)
+        probability = 0.35 + (0.45 * progress) + (0.2 * (1 - round_pressure))
+        if vendor_stance == "firm":
+            probability -= 0.10
+        if legal_stance == "flagged":
+            probability -= 0.20
+        if vendor_stance == "walkout":
+            probability -= 0.40
+        return round(min(max(probability, 0.01), 0.99), 4)
+
     def _build_progress_summary(self, score: float) -> str:
         return (
             f"Progress: {len(self._agreed)}/{len(self._clauses)} clauses agreed; "
@@ -290,24 +349,41 @@ class BlockArenaEnvironment(Environment):
             f"current score {score:.4f}."
         )
 
-    def _calculate_reward(
+    def _build_reward_breakdown(
         self,
         action_type: str,
         vendor_stance: str,
         legal_stance: str,
         probe_result: str | None,
-    ) -> float:
-        reward = 0.01
+    ) -> Dict[str, float]:
+        breakdown = {
+            "base": 0.01,
+            "agreement_bonus": 0.0,
+            "probe_bonus": 0.0,
+            "legal_penalty": 0.0,
+            "walkout_penalty": 0.0,
+            "final_bonus": 0.0,
+            "total": 0.01,
+        }
         if vendor_stance == "open" and legal_stance == "approved":
             if action_type in ("ACCEPT", "PROPOSE"):
-                reward += 0.40
+                breakdown["agreement_bonus"] = 0.40
         if action_type == "PROBE" and probe_result:
-            reward += 0.10
+            breakdown["probe_bonus"] = 0.10
         if legal_stance == "flagged":
-            reward -= 0.20
+            breakdown["legal_penalty"] = -0.20
         if vendor_stance == "walkout":
-            reward -= 0.30
-        return clamp(reward)
+            breakdown["walkout_penalty"] = -0.30
+
+        total = (
+            breakdown["base"]
+            + breakdown["agreement_bonus"]
+            + breakdown["probe_bonus"]
+            + breakdown["legal_penalty"]
+            + breakdown["walkout_penalty"]
+        )
+        breakdown["total"] = clamp(total)
+        return breakdown
 
     def _calculate_final_bonus(self) -> float:
         bonus = 0.0
