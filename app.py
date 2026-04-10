@@ -8,8 +8,7 @@ import json
 from typing import Optional, Dict, Any, Tuple
 from server.blockarena_environment import (
     BlockArenaEnvironment,
-    BlockArenaAction,
-    ActionType
+    BlockArenaAction
 )
 
 # Global environment instance
