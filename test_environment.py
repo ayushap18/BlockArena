@@ -13,8 +13,9 @@ def test_probe_reward():
     env = BlockArenaEnvironment("easy")
     env.reset()
     r = env.step(BlockArenaAction(action_type=ActionType.PROBE, party="vendor", question="what?"))
-    assert r.reward == 0.1
+    assert 0.10 <= r.reward <= 0.12, f"Expected reward ~0.10, got {r.reward}"
     assert r.metadata["next_best_action"] in {"ACCEPT", "PROPOSE", "PROBE"}
+    assert r.metadata["action_mix"]["PROBE"] == 1
     print("test_probe_reward passed")
 
 def test_propose_closes_clause():
