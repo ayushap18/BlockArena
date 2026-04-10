@@ -7,6 +7,7 @@ import json
 from typing import Optional, Dict, Any, Tuple
 
 import gradio as gr
+from fastapi.responses import RedirectResponse
 
 try:
     from openenv.core.env_server.http_server import create_app
@@ -424,7 +425,13 @@ app = create_app(
 
 @app.get("/")
 async def root():
-    """Root endpoint for Hugging Face Spaces and local health checks."""
+    """Send users to the interactive dashboard by default."""
+    return RedirectResponse(url="/playground")
+
+
+@app.get("/info")
+async def info():
+    """Environment metadata and endpoint reference."""
     return {
         "name": "BlockArena",
         "description": "Strategic Contract Negotiation Environment for OpenEnv",
