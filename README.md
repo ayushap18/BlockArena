@@ -95,6 +95,16 @@ Every observation includes AI-powered tactical guidance:
 - **next_best_action** — Recommended next action based on state
 - **action_mix** — Running count of each action used this episode
 
+### 🛠️ Hackathon Demo Upgrades
+
+The Space now feels more like a product demo than a raw environment:
+
+- **Scenario selector** for easy / medium / hard negotiation runs
+- **Scenario preview card** showing clause count, probe budget, and round budget before reset
+- **Live strategy board** with risk level, next best action, and episode score
+- **Action timeline** for reviewing negotiation flow at a glance
+- **Guided demo button** that walks judges through a probe → propose → summarize flow
+
 ---
 
 ## 🎮 Action Space
