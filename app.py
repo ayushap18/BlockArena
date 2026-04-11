@@ -352,7 +352,8 @@ def take_action(
         })
         
         # Format response
-        obs = result.observation
+        # env.step returns BlockArenaObservation directly in this project.
+        obs = result
         reward = float(result.reward)
         done = result.done
         
